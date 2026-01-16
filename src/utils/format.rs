@@ -50,31 +50,31 @@ pub fn format_cost(cost: f64) -> String {
     format!("${:.2}", cost)
 }
 
-/// Get status display string with color
-pub fn format_status(status: ProviderStatus) -> String {
+/// Get status display string (plain text for table)
+pub fn format_status_plain(status: ProviderStatus) -> &'static str {
     match status {
-        ProviderStatus::Active => "Active".green().to_string(),
-        ProviderStatus::NotFound => "N/A".dimmed().to_string(),
-        ProviderStatus::NoKey => "No Key".yellow().to_string(),
-        ProviderStatus::AuthRequired => "Auth".yellow().to_string(),
-        ProviderStatus::Error => "Error".red().to_string(),
-        ProviderStatus::LinkOnly => "Link".blue().to_string(),
+        ProviderStatus::Active => "Active",
+        ProviderStatus::NotFound => "N/A",
+        ProviderStatus::NoKey => "No Key",
+        ProviderStatus::AuthRequired => "Auth",
+        ProviderStatus::Error => "Error",
+        ProviderStatus::LinkOnly => "Link",
     }
 }
 
-/// Get status icon
+/// Get status icon (ASCII for consistent width)
 pub fn status_icon(status: ProviderStatus) -> &'static str {
     match status {
-        ProviderStatus::Active => "✓",
-        ProviderStatus::NotFound => "○",
-        ProviderStatus::NoKey => "✗",
-        ProviderStatus::AuthRequired => "⚠",
-        ProviderStatus::Error => "✗",
-        ProviderStatus::LinkOnly => "→",
+        ProviderStatus::Active => "[+]",
+        ProviderStatus::NotFound => "[ ]",
+        ProviderStatus::NoKey => "[x]",
+        ProviderStatus::AuthRequired => "[!]",
+        ProviderStatus::Error => "[x]",
+        ProviderStatus::LinkOnly => "[>]",
     }
 }
 
-/// Table row for display
+/// Table row for display (plain text, colors applied after)
 #[derive(Tabled)]
 pub struct TableRow {
     #[tabled(rename = "Tool")]
@@ -109,7 +109,7 @@ pub fn format_table(results: &[ProviderResult]) -> String {
 
         rows.push(TableRow {
             tool: result.display_name.clone(),
-            status: format!("{} {}", status_icon(result.status), format_status(result.status)),
+            status: format!("{} {}", status_icon(result.status), format_status_plain(result.status)),
             today,
             this_week: week,
             this_month: month,
@@ -120,9 +120,21 @@ pub fn format_table(results: &[ProviderResult]) -> String {
     let table = Table::new(rows)
         .with(Style::rounded())
         .with(Modify::new(Columns::single(0)).with(Alignment::left()))
+        .with(Modify::new(Columns::single(1)).with(Alignment::left()))
+        .with(Modify::new(Columns::new(2..)).with(Alignment::right()))
         .to_string();
 
-    table
+    // Apply colors to status text after table is built
+    // Use word-boundary-aware replacement to color status text
+    let colored_table = table
+        .replace("[+] Active", &format!("{} {}", "[+]".green(), "Active".green()))
+        .replace("[ ] N/A", &format!("{} {}", "[ ]".dimmed(), "N/A".dimmed()))
+        .replace("[x] No Key", &format!("{} {}", "[x]".yellow(), "No Key".yellow()))
+        .replace("[!] Auth", &format!("{} {}", "[!]".yellow(), "Auth".yellow()))
+        .replace("[x] Error", &format!("{} {}", "[x]".red(), "Error".red()))
+        .replace("[>] Link", &format!("{} {}", "[>]".blue(), "Link".blue()));
+
+    colored_table
 }
 
 /// Format results as JSON
