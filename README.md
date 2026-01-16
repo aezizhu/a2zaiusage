@@ -13,7 +13,9 @@
 </p>
 
 <p align="center">
-  <img src="https://img.shields.io/npm/v/a2zusage?style=flat-square" alt="npm version">
+  <a href="https://www.npmjs.com/package/a2zusage"><img src="https://img.shields.io/npm/v/a2zusage?style=flat-square" alt="npm version"></a>
+  <a href="https://www.npmjs.com/package/a2zusage"><img src="https://img.shields.io/npm/dm/a2zusage?style=flat-square" alt="npm downloads"></a>
+  <a href="https://github.com/aezizhu/a2zaiusage/stargazers"><img src="https://img.shields.io/github/stars/aezizhu/a2zaiusage?style=flat-square" alt="GitHub stars"></a>
   <img src="https://img.shields.io/badge/license-Apache%202.0-blue?style=flat-square" alt="license">
   <img src="https://img.shields.io/badge/tools-14%2B-green?style=flat-square" alt="supported tools">
 </p>
@@ -226,7 +228,7 @@ If you use a2zusage in your research, hiring process, or project, please cite:
   author = {aezizhu},
   title = {a2zusage: AI Coding Tools Usage Tracker},
   url = {https://github.com/aezizhu/a2zaiusage},
-  year = {2025}
+  year = {2026}
 }
 ```
 
