@@ -1,5 +1,5 @@
 [package]
-name = "ccusage"
+name = "a2zusage"
 version = "1.0.0"
 edition = "2021"
 description = "Query usage statistics from all your AI coding tools in one command - Claude Code, Cursor, GitHub Copilot, Windsurf, Warp AI, and 14+ tools"
@@ -12,7 +12,7 @@ authors = ["aezizhu <https://github.com/aezizhu>"]
 readme = "README.md"
 
 [[bin]]
-name = "ccusage"
+name = "a2zusage"
 path = "src/main.rs"
 
 [dependencies]

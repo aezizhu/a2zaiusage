@@ -28,8 +28,8 @@ Thumbs.db
 .env.local
 
 # Local binary (will be downloaded during install)
-/bin/ccusage
-/bin/ccusage.exe
+/bin/a2zusage
+/bin/a2zusage.exe
 
 # Claude Code local files
 .claude/

@@ -6,7 +6,7 @@ const https = require('https');
 const { execSync } = require('child_process');
 
 const REPO = 'aezizhu/a2zaiusage';
-const BINARY_NAME = process.platform === 'win32' ? 'ccusage.exe' : 'ccusage';
+const BINARY_NAME = process.platform === 'win32' ? 'a2zusage.exe' : 'a2zusage';
 
 function getPlatformKey() {
   const platform = process.platform;
@@ -56,7 +56,7 @@ async function getLatestRelease() {
     const options = {
       hostname: 'api.github.com',
       path: `/repos/${REPO}/releases/latest`,
-      headers: { 'User-Agent': 'ccusage-installer' }
+      headers: { 'User-Agent': 'a2zusage-installer' }
     };
 
     https.get(options, (res) => {
@@ -79,16 +79,16 @@ async function install() {
 
   // Check if binary already exists
   if (fs.existsSync(binaryPath)) {
-    console.log('ccusage binary already installed');
+    console.log('a2zusage binary already installed');
     return;
   }
 
   const platformKey = getPlatformKey();
-  console.log(`Installing ccusage for ${platformKey}...`);
+  console.log(`Installing a2zusage for ${platformKey}...`);
 
   try {
     const release = await getLatestRelease();
-    const assetName = `ccusage-${platformKey}${process.platform === 'win32' ? '.exe' : ''}`;
+    const assetName = `a2zusage-${platformKey}${process.platform === 'win32' ? '.exe' : ''}`;
     const asset = release.assets?.find(a => a.name === assetName);
 
     if (asset) {
@@ -96,7 +96,7 @@ async function install() {
       if (process.platform !== 'win32') {
         fs.chmodSync(binaryPath, '755');
       }
-      console.log('ccusage installed successfully!');
+      console.log('a2zusage installed successfully!');
     } else {
       console.log('Pre-built binary not found. Building from source...');
       buildFromSource(binDir);
@@ -126,9 +126,9 @@ function buildFromSource(binDir) {
       fs.chmodSync(destBinary, '755');
     }
 
-    console.log('ccusage built and installed successfully!');
+    console.log('a2zusage built and installed successfully!');
   } catch (error) {
-    console.error('Error: Rust is required to build ccusage from source.');
+    console.error('Error: Rust is required to build a2zusage from source.');
     console.error('Install Rust from https://rustup.rs/ and try again.');
     console.error('Or download a pre-built binary from:');
     console.error(`https://github.com/${REPO}/releases`);

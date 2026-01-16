@@ -1,4 +1,4 @@
-# ccusage - AI Coding Tools Usage Tracker
+# a2zusage - AI Coding Tools Usage Tracker
 
 <p align="center">
   <strong>Query usage statistics from ALL your AI coding tools in one command</strong>
@@ -13,7 +13,7 @@
 </p>
 
 <p align="center">
-  <img src="https://img.shields.io/npm/v/ccusage?style=flat-square" alt="npm version">
+  <img src="https://img.shields.io/npm/v/a2zusage?style=flat-square" alt="npm version">
   <img src="https://img.shields.io/badge/license-Apache%202.0-blue?style=flat-square" alt="license">
   <img src="https://img.shields.io/badge/tools-14%2B-green?style=flat-square" alt="supported tools">
 </p>
@@ -38,19 +38,19 @@
 ### Using npx (Recommended)
 
 ```bash
-npx ccusage@latest
+npx a2zusage@latest
 ```
 
 ### Install Globally
 
 ```bash
-npm install -g ccusage
+npm install -g a2zusage
 ```
 
 ### Using Cargo (Rust)
 
 ```bash
-cargo install ccusage
+cargo install a2zusage
 ```
 
 ### From Source
@@ -59,12 +59,12 @@ cargo install ccusage
 git clone https://github.com/aezizhu/a2zaiusage.git
 cd a2zaiusage
 cargo build --release
-./target/release/ccusage
+./target/release/a2zusage
 ```
 
 ## Supported Tools
 
-ccusage supports **14+ AI coding tools** out of the box:
+a2zusage supports **14+ AI coding tools** out of the box:
 
 | Tool | Data Source | Status |
 |------|-------------|--------|
@@ -89,35 +89,35 @@ ccusage supports **14+ AI coding tools** out of the box:
 
 ```bash
 # Query all detected AI tools
-ccusage
+a2zusage
 
 # Or using npx
-npx ccusage@latest
+npx a2zusage@latest
 ```
 
 ### Filter by Tool
 
 ```bash
-ccusage -t claude-code    # Only Claude Code
-ccusage -t cursor         # Only Cursor
-ccusage -t warp           # Only Warp AI
+a2zusage -t claude-code    # Only Claude Code
+a2zusage -t cursor         # Only Cursor
+a2zusage -t warp           # Only Warp AI
 ```
 
 ### Output Formats
 
 ```bash
-ccusage -f table    # Pretty table (default)
-ccusage -f json     # JSON output
-ccusage -f csv      # CSV output
+a2zusage -f table    # Pretty table (default)
+a2zusage -f json     # JSON output
+a2zusage -f csv      # CSV output
 ```
 
 ### Other Commands
 
 ```bash
-ccusage doctor      # Check paths and configuration
-ccusage list        # List all supported tools
-ccusage --help      # Show help
-ccusage -v          # Verbose mode with data sources
+a2zusage doctor      # Check paths and configuration
+a2zusage list        # List all supported tools
+a2zusage --help      # Show help
+a2zusage -v          # Verbose mode with data sources
 ```
 
 ### JSON Output Example
@@ -151,7 +151,7 @@ When hiring, we found that:
 - **Token usage reveals real habits** - High usage = deep integration into daily workflow
 - **Multiple tool usage shows adaptability** - The best devs try everything and use what works
 
-We used ccusage in our hiring process and found it **incredibly effective** at identifying candidates who are genuinely productive with AI tools. Now we're open-sourcing it for the community.
+We used a2zusage in our hiring process and found it **incredibly effective** at identifying candidates who are genuinely productive with AI tools. Now we're open-sourcing it for the community.
 
 ### 📊 Quantify Your AI Usage
 
@@ -160,7 +160,7 @@ Ever wondered:
 - Which tool you use most frequently?
 - How your usage has changed over time?
 
-ccusage answers all these questions in seconds.
+a2zusage answers all these questions in seconds.
 
 ### 🔒 Privacy-First Design
 
@@ -219,12 +219,12 @@ Found a bug or have a suggestion? [Open an issue](https://github.com/aezizhu/a2z
 
 ## Citation
 
-If you use ccusage in your research, hiring process, or project, please cite:
+If you use a2zusage in your research, hiring process, or project, please cite:
 
 ```bibtex
-@software{ccusage,
+@software{a2zusage,
   author = {aezizhu},
-  title = {ccusage: AI Coding Tools Usage Tracker},
+  title = {a2zusage: AI Coding Tools Usage Tracker},
   url = {https://github.com/aezizhu/a2zaiusage},
   year = {2025}
 }

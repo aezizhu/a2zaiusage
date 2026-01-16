@@ -171,7 +171,7 @@ pub fn format_csv(results: &[ProviderResult]) -> String {
 /// Print banner
 pub fn print_banner() {
     println!();
-    println!("{}", "  ccusage - AI Coding Tools Usage Tracker".cyan().bold());
+    println!("{}", "  a2zusage - AI Coding Tools Usage Tracker".cyan().bold());
     println!();
 }
 

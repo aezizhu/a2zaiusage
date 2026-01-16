@@ -1,4 +1,4 @@
-//! ccusage - Query usage statistics from all your AI coding tools in one command
+//! a2zusage - Query usage statistics from all your AI coding tools in one command
 
 mod providers;
 mod types;
@@ -12,7 +12,7 @@ use types::{OutputFormat, ProviderResult};
 use utils::format::{format_csv, format_json, format_table, print_banner, print_doctor_results};
 
 #[derive(Parser)]
-#[command(name = "ccusage")]
+#[command(name = "a2zusage")]
 #[command(author, version, about = "Query usage statistics from all your AI coding tools in one command")]
 struct Cli {
     #[command(subcommand)]
@@ -203,10 +203,10 @@ fn run_list() -> anyhow::Result<()> {
     }
 
     println!("\n{}", "Usage:".bold());
-    println!("  ccusage              # Query all tools");
-    println!("  ccusage -t cursor    # Query specific tool");
-    println!("  ccusage -f json      # Output as JSON");
-    println!("  ccusage doctor       # Check configuration");
+    println!("  a2zusage              # Query all tools");
+    println!("  a2zusage -t cursor    # Query specific tool");
+    println!("  a2zusage -f json      # Output as JSON");
+    println!("  a2zusage doctor       # Check configuration");
     println!();
 
     Ok(())

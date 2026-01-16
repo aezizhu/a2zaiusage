@@ -4,13 +4,13 @@ const { spawn } = require('child_process');
 const path = require('path');
 const fs = require('fs');
 
-const BINARY_NAME = process.platform === 'win32' ? 'ccusage.exe' : 'ccusage';
+const BINARY_NAME = process.platform === 'win32' ? 'a2zusage.exe' : 'a2zusage';
 const binaryPath = path.join(__dirname, BINARY_NAME);
 
 // Check if binary exists
 if (!fs.existsSync(binaryPath)) {
-  console.error('Error: ccusage binary not found.');
-  console.error('Try reinstalling: npm install -g ccusage');
+  console.error('Error: a2zusage binary not found.');
+  console.error('Try reinstalling: npm install -g a2zusage');
   process.exit(1);
 }
 
@@ -22,7 +22,7 @@ const child = spawn(binaryPath, args, {
 });
 
 child.on('error', (err) => {
-  console.error('Failed to run ccusage:', err.message);
+  console.error('Failed to run a2zusage:', err.message);
   process.exit(1);
 });
 
