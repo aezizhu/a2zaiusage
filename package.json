@@ -1,6 +1,6 @@
 {
   "name": "a2zusage",
-  "version": "1.0.0",
+  "version": "1.0.1",
   "description": "Query usage statistics from all your AI coding tools in one command - Claude Code, Cursor, GitHub Copilot, Windsurf, Warp AI, and 14+ tools",
   "keywords": [
     "ai-usage",
@@ -34,7 +34,7 @@
     "url": "https://github.com/aezizhu/a2zaiusage/issues"
   },
   "bin": {
-    "a2zusage": "./bin/a2zusage.js"
+    "a2zusage": "bin/a2zusage.js"
   },
   "files": [
     "bin/",

@@ -192,7 +192,6 @@ fn run_list() -> anyhow::Result<()> {
         ("gemini-cli", "Gemini CLI", "Local telemetry"),
         ("amazon-q", "Amazon Q", "Local logs"),
         ("tabnine", "Tabnine", "Local logs"),
-        ("gemini-code-assist", "Gemini Code Assist", "Google Cloud"),
         ("sourcegraph-cody", "Sourcegraph Cody", "VS Code extension"),
         ("replit", "Replit Ghostwriter", "Web only (link)"),
     ];

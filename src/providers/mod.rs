@@ -10,7 +10,6 @@ mod openai_codex;
 mod gemini_cli;
 mod amazon_q;
 mod tabnine;
-mod gemini_code_assist;
 mod sourcegraph_cody;
 mod replit;
 mod warp;
@@ -25,7 +24,6 @@ pub use openai_codex::OpenAICodexProvider;
 pub use gemini_cli::GeminiCLIProvider;
 pub use amazon_q::AmazonQProvider;
 pub use tabnine::TabnineProvider;
-pub use gemini_code_assist::GeminiCodeAssistProvider;
 pub use sourcegraph_cody::SourcegraphCodyProvider;
 pub use replit::ReplitProvider;
 pub use warp::WarpProvider;
@@ -68,7 +66,6 @@ pub fn get_all_providers() -> Vec<Box<dyn Provider>> {
         Box::new(GeminiCLIProvider::new()),
         Box::new(AmazonQProvider::new()),
         Box::new(TabnineProvider::new()),
-        Box::new(GeminiCodeAssistProvider::new()),
         Box::new(SourcegraphCodyProvider::new()),
         Box::new(ReplitProvider::new()),
     ]

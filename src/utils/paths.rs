@@ -242,30 +242,6 @@ pub mod cline {
     }
 }
 
-/// Path configurations for Gemini Code Assist
-pub mod gemini_code_assist {
-    use super::*;
-
-    pub fn vscode_extension() -> Option<PathBuf> {
-        #[cfg(target_os = "windows")]
-        {
-            dirs::data_dir().map(|d| d.join("Code").join("User").join("globalStorage").join("google.cloudcode"))
-        }
-        #[cfg(target_os = "macos")]
-        {
-            dirs::data_dir().map(|d| d.join("Code").join("User").join("globalStorage").join("google.cloudcode"))
-        }
-        #[cfg(target_os = "linux")]
-        {
-            config_dir().map(|d| d.join("Code").join("User").join("globalStorage").join("google.cloudcode"))
-        }
-        #[cfg(not(any(target_os = "windows", target_os = "macos", target_os = "linux")))]
-        {
-            None
-        }
-    }
-}
-
 /// Path configurations for Sourcegraph Cody
 pub mod sourcegraph_cody {
     use super::*;
