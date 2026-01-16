@@ -1,0 +1,71 @@
+[package]
+name = "ccusage"
+version = "1.0.0"
+edition = "2021"
+description = "Query usage statistics from all your AI coding tools in one command - Claude Code, Cursor, GitHub Copilot, Windsurf, Warp AI, and 14+ tools"
+license = "Apache-2.0"
+repository = "https://github.com/aezizhu/a2zaiusage"
+homepage = "https://github.com/aezizhu/a2zaiusage"
+keywords = ["ai", "coding", "usage", "claude", "cursor", "copilot", "token", "tracker", "vibe-coding"]
+categories = ["command-line-utilities", "development-tools"]
+authors = ["aezizhu <https://github.com/aezizhu>"]
+readme = "README.md"
+
+[[bin]]
+name = "ccusage"
+path = "src/main.rs"
+
+[dependencies]
+# CLI
+clap = { version = "4.5", features = ["derive"] }
+
+# Serialization
+serde = { version = "1.0", features = ["derive"] }
+serde_json = "1.0"
+
+# Database (for Cursor)
+rusqlite = { version = "0.32", features = ["bundled"] }
+
+# Date/Time
+chrono = { version = "0.4", features = ["serde"] }
+
+# Terminal output
+tabled = "0.17"
+colored = "2.1"
+
+# Cross-platform paths
+dirs = "5.0"
+
+# HTTP client (for API providers)
+reqwest = { version = "0.12", features = ["json", "rustls-tls"], default-features = false }
+
+# Async runtime
+tokio = { version = "1.42", features = ["full"] }
+
+# Error handling
+anyhow = "1.0"
+thiserror = "2.0"
+
+# File globbing
+glob = "0.3"
+
+# Temp files (for SQLite snapshots)
+tempfile = "3.14"
+
+# Lazy static
+once_cell = "1.20"
+
+# Async trait
+async-trait = "0.1"
+
+# Regex (lightweight)
+regex-lite = "0.1"
+
+# Futures
+futures = "0.3"
+
+[profile.release]
+opt-level = 3
+lto = true
+codegen-units = 1
+strip = true

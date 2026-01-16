@@ -1,0 +1,35 @@
+# Rust
+/target/
+Cargo.lock
+
+# Node
+node_modules/
+package-lock.json
+npm-debug.log*
+
+# OS
+.DS_Store
+Thumbs.db
+
+# IDE
+.idea/
+.vscode/
+*.swp
+*.swo
+
+# Build artifacts
+*.exe
+*.dll
+*.so
+*.dylib
+
+# Local files
+.env
+.env.local
+
+# Local binary (will be downloaded during install)
+/bin/ccusage
+/bin/ccusage.exe
+
+# Claude Code local files
+.claude/
