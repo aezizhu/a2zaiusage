@@ -5,9 +5,10 @@ use super::Provider;
 use crate::types::{ProviderResult, TimeRange, UsageData, UsageStats};
 use crate::utils::db::with_db_snapshot;
 use crate::utils::paths::warp;
+use crate::utils::time::get_local_time_ranges;
 use anyhow::Result;
 use async_trait::async_trait;
-use chrono::{DateTime, Datelike, TimeZone, Utc};
+use chrono::{DateTime, TimeZone, Utc};
 use rusqlite::Connection;
 use serde::Deserialize;
 use std::path::Path;
@@ -41,16 +42,7 @@ impl WarpProvider {
     }
 
     fn get_time_ranges() -> (TimeRange, TimeRange, TimeRange) {
-        let now = Utc::now();
-        let today_start = Utc.with_ymd_and_hms(now.year(), now.month(), now.day(), 0, 0, 0).unwrap();
-        let week_start = today_start - chrono::Duration::days(now.weekday().num_days_from_sunday() as i64);
-        let month_start = Utc.with_ymd_and_hms(now.year(), now.month(), 1, 0, 0, 0).unwrap();
-
-        (
-            TimeRange { start: today_start, end: now },
-            TimeRange { start: week_start, end: now },
-            TimeRange { start: month_start, end: now },
-        )
+        get_local_time_ranges()
     }
 
     fn process_database(db_path: &Path, stats: &mut UsageStats, ranges: &(TimeRange, TimeRange, TimeRange)) -> Result<()> {

@@ -5,10 +5,11 @@
 use super::Provider;
 use crate::types::{ProviderResult, TimeRange, UsageData, UsageStats};
 use crate::utils::paths::claude_code;
-use crate::utils::tokenizer::calculate_cost;
+use crate::utils::time::get_local_time_ranges;
+use crate::utils::tokenizer::calculate_cost_with_cache;
 use anyhow::Result;
 use async_trait::async_trait;
-use chrono::{DateTime, TimeZone, Utc};
+use chrono::{DateTime, Utc};
 use serde::Deserialize;
 use std::fs;
 use std::path::Path;
@@ -47,17 +48,7 @@ impl ClaudeCodeProvider {
     }
 
     fn get_time_ranges() -> (TimeRange, TimeRange, TimeRange) {
-        let now = Utc::now();
-        let today_start = Utc.with_ymd_and_hms(now.year(), now.month(), now.day(), 0, 0, 0).unwrap();
-
-        let week_start = today_start - chrono::Duration::days(now.weekday().num_days_from_sunday() as i64);
-        let month_start = Utc.with_ymd_and_hms(now.year(), now.month(), 1, 0, 0, 0).unwrap();
-
-        (
-            TimeRange { start: today_start, end: now },
-            TimeRange { start: week_start, end: now },
-            TimeRange { start: month_start, end: now },
-        )
+        get_local_time_ranges()
     }
 
     fn parse_jsonl_file(path: &Path) -> Vec<ClaudeMessage> {
@@ -93,7 +84,8 @@ impl ClaudeCodeProvider {
             usage.estimated_cost = cost;
         }
 
-        if usage.input_tokens > 0 || usage.output_tokens > 0 {
+        // Count as a request if there are any tokens (input, output, or cache)
+        if usage.input_tokens > 0 || usage.output_tokens > 0 || usage.cache_read_tokens > 0 || usage.cache_write_tokens > 0 {
             usage.request_count = 1;
         }
 
@@ -123,7 +115,8 @@ impl ClaudeCodeProvider {
 
                     for msg in messages {
                         let usage = Self::extract_usage(&msg);
-                        if usage.input_tokens > 0 || usage.output_tokens > 0 {
+                        // Include messages with any tokens (input, output, cache read, or cache write)
+                        if usage.input_tokens > 0 || usage.output_tokens > 0 || usage.cache_read_tokens > 0 || usage.cache_write_tokens > 0 {
                             stats.total.add(&usage);
 
                             let msg_time = Self::parse_timestamp(msg.timestamp.as_ref())
@@ -146,8 +139,6 @@ impl ClaudeCodeProvider {
         }
     }
 }
-
-use chrono::Datelike;
 
 #[async_trait]
 impl Provider for ClaudeCodeProvider {
@@ -184,12 +175,28 @@ impl Provider for ClaudeCodeProvider {
         // Recursively find and process all JSONL files
         Self::process_directory(&projects_dir, &mut stats, &(today_range, week_range, month_range));
 
-        // Calculate costs if not already set
+        // Calculate costs if not already set (include cache tokens in calculation)
         if stats.total.estimated_cost == 0.0 && stats.total.total_tokens() > 0 {
-            stats.today.estimated_cost = calculate_cost(stats.today.input_tokens, stats.today.output_tokens, Some("claude-sonnet-4"));
-            stats.this_week.estimated_cost = calculate_cost(stats.this_week.input_tokens, stats.this_week.output_tokens, Some("claude-sonnet-4"));
-            stats.this_month.estimated_cost = calculate_cost(stats.this_month.input_tokens, stats.this_month.output_tokens, Some("claude-sonnet-4"));
-            stats.total.estimated_cost = calculate_cost(stats.total.input_tokens, stats.total.output_tokens, Some("claude-sonnet-4"));
+            stats.today.estimated_cost = calculate_cost_with_cache(
+                stats.today.input_tokens, stats.today.output_tokens,
+                stats.today.cache_read_tokens, stats.today.cache_write_tokens,
+                Some("claude-sonnet-4")
+            );
+            stats.this_week.estimated_cost = calculate_cost_with_cache(
+                stats.this_week.input_tokens, stats.this_week.output_tokens,
+                stats.this_week.cache_read_tokens, stats.this_week.cache_write_tokens,
+                Some("claude-sonnet-4")
+            );
+            stats.this_month.estimated_cost = calculate_cost_with_cache(
+                stats.this_month.input_tokens, stats.this_month.output_tokens,
+                stats.this_month.cache_read_tokens, stats.this_month.cache_write_tokens,
+                Some("claude-sonnet-4")
+            );
+            stats.total.estimated_cost = calculate_cost_with_cache(
+                stats.total.input_tokens, stats.total.output_tokens,
+                stats.total.cache_read_tokens, stats.total.cache_write_tokens,
+                Some("claude-sonnet-4")
+            );
         }
 
         Ok(ProviderResult::active(

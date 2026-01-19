@@ -96,6 +96,26 @@ pub fn calculate_cost(input_tokens: u64, output_tokens: u64, model: Option<&str>
     input_cost + output_cost
 }
 
+/// Calculate cost including cache tokens (for Claude/Anthropic models)
+/// Cache read tokens: 10% of input price
+/// Cache write tokens: 125% of input price (25% premium for caching)
+pub fn calculate_cost_with_cache(
+    input_tokens: u64,
+    output_tokens: u64,
+    cache_read_tokens: u64,
+    cache_write_tokens: u64,
+    model: Option<&str>,
+) -> f64 {
+    let (input_price, output_price) = find_model_pricing(model);
+
+    let input_cost = (input_tokens as f64 / 1_000_000.0) * input_price;
+    let output_cost = (output_tokens as f64 / 1_000_000.0) * output_price;
+    let cache_read_cost = (cache_read_tokens as f64 / 1_000_000.0) * input_price * 0.1;
+    let cache_write_cost = (cache_write_tokens as f64 / 1_000_000.0) * input_price * 1.25;
+
+    input_cost + output_cost + cache_read_cost + cache_write_cost
+}
+
 /// Calculate cache cost savings
 /// Cache reads are typically 10% of input cost
 #[allow(dead_code)]

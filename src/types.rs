@@ -31,7 +31,7 @@ impl UsageData {
     }
 
     pub fn total_tokens(&self) -> u64 {
-        self.input_tokens + self.output_tokens
+        self.input_tokens + self.output_tokens + self.cache_read_tokens + self.cache_write_tokens
     }
 
     pub fn add(&mut self, other: &UsageData) {
