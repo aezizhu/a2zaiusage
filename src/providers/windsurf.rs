@@ -78,6 +78,19 @@ impl WindsurfProvider {
         false
     }
 
+    fn count_pb_files(cascade_dir: &Path) -> u64 {
+        let mut count = 0u64;
+        if let Ok(entries) = fs::read_dir(cascade_dir) {
+            for entry in entries.flatten() {
+                let path = entry.path();
+                if path.extension().map(|e| e == "pb").unwrap_or(false) {
+                    count += 1;
+                }
+            }
+        }
+        count
+    }
+
     fn process_jsonl_file(path: &Path, stats: &mut UsageStats, ranges: &(TimeRange, TimeRange, TimeRange)) {
         if let Ok(content) = fs::read_to_string(path) {
             for line in content.lines() {
@@ -233,14 +246,18 @@ impl Provider for WindsurfProvider {
             .unwrap_or_else(|| "Windsurf".to_string());
 
         // If we didn't parse any real token data but we do see protobuf logs,
-        // still report as Active but with a note that usage data is not extractable.
-        // This is more accurate than "Unsupported" since Windsurf IS installed and working.
+        // count the number of .pb files as sessions (honest proxy for usage)
         if stats.total.input_tokens == 0 && stats.total.output_tokens == 0 && stats.total.request_count == 0 && has_pb_only {
+            // Count .pb files as sessions
+            let session_count = Self::count_pb_files(cascade_dir.as_ref().unwrap());
+            if session_count > 0 {
+                stats.total.request_count = session_count;
+            }
             return Ok(ProviderResult::active(
                 self.name(),
                 self.display_name(),
-                stats, // empty stats
-                "Installed (usage in encrypted .pb format)",
+                stats,
+                "Session count from .pb files (token data encrypted)",
             ));
         }
 

@@ -77,6 +77,19 @@ impl GeminiCLIProvider {
         false
     }
 
+    fn count_pb_files(dir: &Path) -> u64 {
+        let mut count = 0u64;
+        if let Ok(entries) = fs::read_dir(dir) {
+            for entry in entries.flatten() {
+                let path = entry.path();
+                if path.extension().map(|e| e == "pb").unwrap_or(false) {
+                    count += 1;
+                }
+            }
+        }
+        count
+    }
+
     fn process_json_file(path: &Path, stats: &mut UsageStats, ranges: &(TimeRange, TimeRange, TimeRange)) {
         if let Ok(content) = fs::read_to_string(path) {
             // Try as array
@@ -220,14 +233,18 @@ impl Provider for GeminiCLIProvider {
             .unwrap_or_else(|| "Gemini CLI".to_string());
 
         // If we didn't parse any real token data but we do see protobuf logs,
-        // still report as Active but with a note that usage data is not extractable.
-        // This is more accurate than "Unsupported" since Gemini CLI IS installed and working.
+        // count the number of .pb files as conversations (honest proxy for usage)
         if stats.total.input_tokens == 0 && stats.total.output_tokens == 0 && stats.total.request_count == 0 && has_pb_logs {
+            // Count .pb files as conversations
+            let conversation_count = Self::count_pb_files(conversations_dir.as_ref().unwrap());
+            if conversation_count > 0 {
+                stats.total.request_count = conversation_count;
+            }
             return Ok(ProviderResult::active(
                 self.name(),
                 self.display_name(),
-                stats, // empty stats
-                "Installed (usage in encrypted .pb format)",
+                stats,
+                "Conversation count from .pb files (token data encrypted)",
             ));
         }
 
