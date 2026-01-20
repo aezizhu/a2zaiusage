@@ -87,11 +87,9 @@ impl SourcegraphCodyProvider {
                 .count() as u64;
             usage.request_count = assistant_count;
 
-            // If no token count but have messages, estimate
-            if usage.input_tokens == 0 && usage.output_tokens == 0 && assistant_count > 0 {
-                usage.input_tokens = assistant_count * 300; // rough estimate
-                usage.output_tokens = assistant_count * 200;
-            }
+            // If token counts are not present, we can still report request_count,
+            // but we should not invent token totals.
+            // (Leave input_tokens/output_tokens as 0.)
         }
 
         if usage.input_tokens > 0 || usage.output_tokens > 0 || usage.request_count > 0 {

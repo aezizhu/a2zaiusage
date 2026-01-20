@@ -180,6 +180,12 @@ pub mod gemini_cli {
     pub fn config_dir() -> Option<PathBuf> {
         home_dir().map(|h| h.join(".gemini"))
     }
+
+    /// Antigravity conversations directory (current Gemini CLI)
+    pub fn conversations_dir() -> Option<PathBuf> {
+        home_dir().map(|h| h.join(".gemini").join("antigravity").join("conversations"))
+    }
+
 }
 
 /// Path configurations for Tabnine

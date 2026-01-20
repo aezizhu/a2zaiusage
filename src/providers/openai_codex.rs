@@ -119,7 +119,13 @@ impl Provider for OpenAICodexProvider {
 
         let stats = match Self::fetch_usage_data(&api_key, &ranges).await {
             Some(s) => s,
-            None => UsageStats::default(),
+            None => {
+                return Ok(ProviderResult::error(
+                    self.name(),
+                    self.display_name(),
+                    "Failed to fetch usage from OpenAI API (check API key permissions, org access, and network).",
+                ));
+            }
         };
 
         Ok(ProviderResult::active(

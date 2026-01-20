@@ -5,7 +5,6 @@ use super::Provider;
 use crate::types::{ProviderResult, TimeRange, UsageData, UsageStats};
 use crate::utils::paths::windsurf;
 use crate::utils::time::get_local_time_ranges;
-use crate::utils::tokenizer::estimate_tokens_from_chars;
 use anyhow::Result;
 use async_trait::async_trait;
 use chrono::{DateTime, TimeZone, Utc};
@@ -59,14 +58,24 @@ impl WindsurfProvider {
                 } else if file_name.ends_with(".json") {
                     Self::process_json_file(&path, stats, ranges);
                 } else if file_name.ends_with(".pb") {
-                    // For protobuf files, estimate by file size
-                    if let Ok(meta) = fs::metadata(&path) {
-                        let size_tokens = (meta.len() / 10) as u64;
-                        Self::add_usage_estimate(stats, size_tokens, &path, ranges);
-                    }
+                    // Protobuf logs exist, but we do NOT (yet) have a schema to extract real token counts.
+                    // Do not estimate tokens from file size.
+                    continue;
                 }
             }
         }
+    }
+
+    fn cascade_has_pb_logs(cascade_dir: &Path) -> bool {
+        if let Ok(entries) = fs::read_dir(cascade_dir) {
+            for entry in entries.flatten() {
+                let path = entry.path();
+                if path.extension().map(|e| e == "pb").unwrap_or(false) {
+                    return true;
+                }
+            }
+        }
+        false
     }
 
     fn process_jsonl_file(path: &Path, stats: &mut UsageStats, ranges: &(TimeRange, TimeRange, TimeRange)) {
@@ -107,8 +116,10 @@ impl WindsurfProvider {
         }
 
         if let Some(billable) = entry.billable_tokens {
-            usage.input_tokens = usage.input_tokens.max((billable as f64 * 0.6) as u64);
-            usage.output_tokens = usage.output_tokens.max((billable as f64 * 0.4) as u64);
+            // billable_tokens is a total; do not invent an input/output split.
+            if usage.input_tokens == 0 && usage.output_tokens == 0 {
+                usage.input_tokens = billable;
+            }
         }
 
         if let Some(context) = entry.context_length {
@@ -155,43 +166,6 @@ impl WindsurfProvider {
         }
     }
 
-    fn add_usage_estimate(stats: &mut UsageStats, tokens: u64, path: &Path, ranges: &(TimeRange, TimeRange, TimeRange)) {
-        let mut usage = UsageData::new();
-        usage.input_tokens = (tokens as f64 * 0.6) as u64;
-        usage.output_tokens = (tokens as f64 * 0.4) as u64;
-        usage.request_count = 1;
-
-        stats.total.add(&usage);
-
-        if let Ok(meta) = fs::metadata(path) {
-            if let Ok(mtime) = meta.modified() {
-                let file_date: DateTime<Utc> = mtime.into();
-                if ranges.0.contains(file_date) {
-                    stats.today.add(&usage);
-                }
-                if ranges.1.contains(file_date) {
-                    stats.this_week.add(&usage);
-                }
-                if ranges.2.contains(file_date) {
-                    stats.this_month.add(&usage);
-                }
-            }
-        }
-    }
-
-    fn process_memories_dir(memories_dir: &Path, stats: &mut UsageStats, ranges: &(TimeRange, TimeRange, TimeRange)) {
-        if let Ok(entries) = fs::read_dir(memories_dir) {
-            for entry in entries.flatten() {
-                let path = entry.path();
-                if path.extension().map(|e| e == "json" || e == "txt").unwrap_or(false) {
-                    if let Ok(content) = fs::read_to_string(&path) {
-                        let tokens = estimate_tokens_from_chars(content.len());
-                        Self::add_usage_estimate(stats, tokens, &path, ranges);
-                    }
-                }
-            }
-        }
-    }
 }
 
 #[async_trait]
@@ -232,7 +206,7 @@ impl Provider for WindsurfProvider {
                     self.name(),
                     self.display_name(),
                     UsageStats::default(),
-                    "Installed (no usage data found)",
+                    "Installed (no readable usage data found)",
                 ));
             }
             return Ok(ProviderResult::not_found(self.name(), self.display_name()));
@@ -241,21 +215,32 @@ impl Provider for WindsurfProvider {
         let ranges = Self::get_time_ranges();
         let mut stats = UsageStats::default();
 
+        let mut has_pb_only = false;
         if let Some(ref dir) = cascade_dir {
             if dir.exists() {
+                has_pb_only = Self::cascade_has_pb_logs(dir);
                 Self::process_cascade_dir(dir, &mut stats, &ranges);
             }
         }
 
-        if let Some(ref dir) = memories_dir {
-            if dir.exists() {
-                Self::process_memories_dir(dir, &mut stats, &ranges);
-            }
-        }
+        // Note: Windsurf "memories" are not a reliable source of usage/token counts.
+        // We do not estimate token usage from these files.
+        let _ = memories_dir; // keep for availability checks
 
         let data_source = cascade_dir
+            .as_ref()
             .map(|p| p.to_string_lossy().to_string())
             .unwrap_or_else(|| "Windsurf".to_string());
+
+        // If we didn't parse any real token data but we do see protobuf logs, report as unsupported.
+        if stats.total.input_tokens == 0 && stats.total.output_tokens == 0 && stats.total.request_count == 0 && has_pb_only {
+            return Ok(ProviderResult::unsupported(
+                self.name(),
+                self.display_name(),
+                "Windsurf logs detected, but they are protobuf (.pb) and this tool does not yet extract token counts from them.",
+                Some(&data_source),
+            ));
+        }
 
         Ok(ProviderResult::active(
             self.name(),

@@ -112,8 +112,14 @@ async fn run_usage_query(cli: &Cli) -> anyhow::Result<()> {
         println!("\n{}", "Data Sources:".bold());
         for result in &results {
             if let Some(ref source) = result.data_source {
+                let status_icon = match result.status {
+                    types::ProviderStatus::Active => "✓".green(),
+                    types::ProviderStatus::Unsupported => "~".yellow(),
+                    _ => "○".dimmed(),
+                };
+
                 println!("  {} {}: {}",
-                    if result.status == types::ProviderStatus::Active { "✓".green() } else { "○".dimmed() },
+                    status_icon,
                     result.display_name,
                     source.dimmed()
                 );

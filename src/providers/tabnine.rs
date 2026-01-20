@@ -5,7 +5,6 @@ use super::Provider;
 use crate::types::{ProviderResult, TimeRange, UsageData, UsageStats};
 use crate::utils::paths::tabnine;
 use crate::utils::time::get_local_time_ranges;
-use crate::utils::tokenizer::estimate_tokens_from_chars;
 use anyhow::Result;
 use async_trait::async_trait;
 use chrono::{DateTime, TimeZone, Utc};
@@ -96,9 +95,6 @@ impl TabnineProvider {
         if let Some(ref meta) = entry.meta {
             if let Some(tokens) = meta.tokens_used {
                 usage.output_tokens = tokens;
-            } else if let Some(net_length) = meta.net_length {
-                // Convert character length to tokens
-                usage.output_tokens = estimate_tokens_from_chars(net_length as usize);
             }
         }
 
@@ -106,14 +102,13 @@ impl TabnineProvider {
         if let Some(ref u) = entry.usage {
             if let Some(tokens) = u.tokens {
                 usage.output_tokens = usage.output_tokens.max(tokens);
-            } else if let Some(chars) = u.chars {
-                usage.output_tokens = usage.output_tokens.max(estimate_tokens_from_chars(chars as usize));
             }
         }
 
         if usage.output_tokens > 0 {
-            // Tabnine is mostly completion, so estimate input as context
-            usage.input_tokens = usage.output_tokens * 2; // rough estimate
+            // Tabnine logs do not reliably include prompt/context token counts.
+            // Do not invent input token totals.
+            usage.input_tokens = 0;
             usage.request_count = 1;
             stats.total.add(&usage);
 

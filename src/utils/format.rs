@@ -23,17 +23,20 @@ pub fn format_number(num: u64) -> String {
 }
 
 /// Format token count with label
+/// Shows input + output tokens (excludes cache tokens from display as they inflate numbers)
 pub fn format_tokens(data: &UsageData) -> String {
-    let total = data.total_tokens();
-    if total == 0 && data.request_count == 0 {
+    // Use input + output only for display (cache tokens are tracked separately for cost)
+    let display_tokens = data.input_tokens + data.output_tokens;
+    
+    if display_tokens == 0 && data.request_count == 0 {
         return "-".to_string();
     }
 
-    if data.request_count > 0 && total == 0 {
+    if data.request_count > 0 && display_tokens == 0 {
         return format!("{} reqs", format_number(data.request_count));
     }
 
-    format!("{} tokens", format_number(total))
+    format!("{} tokens", format_number(display_tokens))
 }
 
 /// Format cost as USD
@@ -54,6 +57,7 @@ pub fn format_cost(cost: f64) -> String {
 pub fn format_status_plain(status: ProviderStatus) -> &'static str {
     match status {
         ProviderStatus::Active => "Active",
+        ProviderStatus::Unsupported => "Unsupported",
         ProviderStatus::NotFound => "N/A",
         ProviderStatus::NoKey => "No Key",
         ProviderStatus::AuthRequired => "Auth",
@@ -66,6 +70,7 @@ pub fn format_status_plain(status: ProviderStatus) -> &'static str {
 pub fn status_icon(status: ProviderStatus) -> &'static str {
     match status {
         ProviderStatus::Active => "[+]",
+        ProviderStatus::Unsupported => "[~]",
         ProviderStatus::NotFound => "[ ]",
         ProviderStatus::NoKey => "[x]",
         ProviderStatus::AuthRequired => "[!]",
@@ -128,6 +133,7 @@ pub fn format_table(results: &[ProviderResult]) -> String {
     // Use word-boundary-aware replacement to color status text
     let colored_table = table
         .replace("[+] Active", &format!("{} {}", "[+]".green(), "Active".green()))
+        .replace("[~] Unsupported", &format!("{} {}", "[~]".yellow(), "Unsupported".yellow()))
         .replace("[ ] N/A", &format!("{} {}", "[ ]".dimmed(), "N/A".dimmed()))
         .replace("[x] No Key", &format!("{} {}", "[x]".yellow(), "No Key".yellow()))
         .replace("[!] Auth", &format!("{} {}", "[!]".yellow(), "Auth".yellow()))

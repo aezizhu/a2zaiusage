@@ -68,21 +68,21 @@ cargo build --release
 
 a2zusage supports **14+ AI coding tools** out of the box:
 
-| Tool | Data Source | Status |
-|------|-------------|--------|
-| **Claude Code** | Local JSONL (`~/.claude/projects/`) | ✅ Full Support |
-| **Cursor** | SQLite database | ✅ Full Support |
-| **GitHub Copilot** | GitHub API + Local logs | ✅ Full Support |
-| **Windsurf** | Cascade logs (`~/.codeium/`) | ✅ Full Support |
-| **Warp AI** | SQLite database | ✅ Full Support |
-| **Cline / Roo Code** | VS Code extension storage | ✅ Full Support |
-| **OpenCode** | Local JSON files | ✅ Full Support |
-| **OpenAI Codex** | OpenAI Usage API | ✅ Full Support |
-| **Gemini CLI** | Local telemetry (`~/.gemini/`) | ✅ Full Support |
-| **Amazon Q Developer** | Local logs | ✅ Full Support |
-| **Tabnine** | Local logs | ✅ Full Support |
-| **Gemini Code Assist** | Google Cloud | ✅ Full Support |
-| **Sourcegraph Cody** | VS Code extension | ✅ Full Support |
+| Tool | Data Source | What’s Accurate |
+|------|-------------|----------------|
+| **Claude Code** | Local JSONL (`~/.claude/projects/`) | ✅ Exact token counts (input/output + cache tokens when present) |
+| **Cursor** | SQLite database | ✅ Exact token counts (when present in DB) |
+| **GitHub Copilot** | GitHub API + Local logs | ⚠️ Usage count / requests only (GitHub does not expose reliable token totals here) |
+| **Windsurf** | Cascade logs (`~/.codeium/`) | ⚠️ Partial: JSON/JSONL token fields supported; protobuf `.pb` logs are detected but not yet parsed |
+| **Warp AI** | SQLite database | ✅ Total tokens (Warp does not expose a reliable input/output split) |
+| **Cline / Roo Code** | VS Code extension storage | ✅ Exact token counts (when stored by the extension) |
+| **OpenCode** | Local JSON files | ✅ Exact token counts (when present in session/message usage fields) |
+| **OpenAI Codex** | OpenAI Usage API | ✅ Exact token counts (requires API key + org access) |
+| **Gemini CLI** | Local telemetry (`~/.gemini/`) | ⚠️ Partial: JSON/JSONL telemetry supported when present; protobuf `.pb` logs are detected but not yet parsed |
+| **Amazon Q Developer** | Local logs | ⚠️ Best-effort: logs may not contain token totals |
+| **Tabnine** | Local logs | ⚠️ Partial: uses explicit token fields when present; no invented prompt/context tokens |
+| **Gemini Code Assist** | Google Cloud | ⚠️ Not implemented in this repo yet |
+| **Sourcegraph Cody** | VS Code extension | ⚠️ Token counts only when present; otherwise request_count only |
 | **Replit Ghostwriter** | Web link | 🔗 Link Only |
 
 ## Usage

@@ -111,10 +111,11 @@ impl WarpProvider {
 
                     if total_tokens > 0 {
                         let mut usage = UsageData::new();
-                        // Split tokens roughly 60/40 input/output
-                        usage.input_tokens = (total_tokens as f64 * 0.6) as u64;
-                        usage.output_tokens = (total_tokens as f64 * 0.4) as u64;
-                        usage.request_count = 1;
+                        // Warp exposes total tokens, but does NOT expose a reliable input/output split.
+                        // Store the total tokens without inventing a split.
+                        usage.input_tokens = total_tokens;
+                        usage.output_tokens = 0;
+                        // Leave request_count at 0 here; we derive request counts from ai_queries.
 
                         stats.total.add(&usage);
 
@@ -239,11 +240,16 @@ impl Provider for WarpProvider {
             return Ok(ProviderResult::error(self.name(), self.display_name(), &e.to_string()));
         }
 
+        let data_source = format!(
+            "{} (total tokens only; no input/output breakdown)",
+            db_path.to_string_lossy()
+        );
+
         Ok(ProviderResult::active(
             self.name(),
             self.display_name(),
             stats,
-            &db_path.to_string_lossy(),
+            &data_source,
         ))
     }
 }

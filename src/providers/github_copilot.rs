@@ -145,15 +145,10 @@ impl Provider for GitHubCopilotProvider {
         // Try the internal API for individual usage
         if let Some(user_response) = Self::fetch_copilot_user(&token).await {
             if let Some(usage_count) = user_response.limited_user_usage {
-                // The API provides limited usage data
+                // The API provides a usage count, but does NOT provide reliable token totals.
+                // Report it as request_count only (tokens remain 0).
                 stats.this_month.request_count = usage_count;
                 stats.total.request_count = usage_count;
-
-                // Estimate tokens from requests (rough estimate: 500 tokens per request)
-                stats.this_month.input_tokens = usage_count * 300;
-                stats.this_month.output_tokens = usage_count * 200;
-                stats.total.input_tokens = stats.this_month.input_tokens;
-                stats.total.output_tokens = stats.this_month.output_tokens;
             }
 
             return Ok(ProviderResult::active(

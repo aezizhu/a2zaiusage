@@ -59,6 +59,8 @@ pub struct UsageStats {
 pub enum ProviderStatus {
     /// Data found and parsed successfully
     Active,
+    /// Tool installed, but usage exists in an unsupported/unknown format so accurate totals can't be computed
+    Unsupported,
     /// Tool not installed or no data found
     NotFound,
     /// API key required but not provided
@@ -75,6 +77,7 @@ impl fmt::Display for ProviderStatus {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         match self {
             ProviderStatus::Active => write!(f, "Active"),
+            ProviderStatus::Unsupported => write!(f, "Unsupported"),
             ProviderStatus::NotFound => write!(f, "N/A"),
             ProviderStatus::NoKey => write!(f, "No Key"),
             ProviderStatus::AuthRequired => write!(f, "Auth Required"),
@@ -135,6 +138,17 @@ impl ProviderResult {
             usage: None,
             error: None,
             data_source: None,
+        }
+    }
+
+    pub fn unsupported(name: &str, display_name: &str, message: &str, data_source: Option<&str>) -> Self {
+        Self {
+            name: name.to_string(),
+            display_name: display_name.to_string(),
+            status: ProviderStatus::Unsupported,
+            usage: None,
+            error: Some(message.to_string()),
+            data_source: data_source.map(|s| s.to_string()),
         }
     }
 
