@@ -78,7 +78,7 @@ a2zusage supports **14+ AI coding tools** out of the box:
 | **Cline / Roo Code** | VS Code extension storage | ✅ Exact token counts (when stored by the extension) |
 | **OpenCode** | Local JSON files | ✅ Exact token counts (when present in session/message usage fields) |
 | **OpenAI Codex** | OpenAI Usage API | ✅ Exact token counts (requires API key + org access) |
-| **Gemini CLI** | Local telemetry (`~/.gemini/`) | ⚠️ Partial: JSON/JSONL telemetry supported when present; protobuf `.pb` logs are detected but not yet parsed |
+|| **Gemini CLI** | Local telemetry (`~/.gemini/`) | ✅ Exact token counts with wrapper (see [Gemini CLI Setup](#gemini-cli-setup)) |
 | **Amazon Q Developer** | Local logs | ⚠️ Best-effort: logs may not contain token totals |
 | **Tabnine** | Local logs | ⚠️ Partial: uses explicit token fields when present; no invented prompt/context tokens |
 | **Gemini Code Assist** | Google Cloud | ⚠️ Not implemented in this repo yet |
@@ -140,6 +140,26 @@ a2zusage -v          # Verbose mode with data sources
   }
 ]
 ```
+
+## Tool-Specific Setup
+
+### Gemini CLI Setup
+
+Gemini CLI stores conversation data in encrypted protobuf files. To get accurate token tracking, use our wrapper script that captures the `usageMetadata` from the `--output-format stream-json` output:
+
+```bash
+# 1. Copy the wrapper script
+curl -o ~/.local/bin/gemini-wrapper https://raw.githubusercontent.com/aezizhu/a2zaiusage/main/scripts/gemini-wrapper.sh
+chmod +x ~/.local/bin/gemini-wrapper
+
+# 2. Create an alias (add to your .bashrc or .zshrc)
+alias gemini="~/.local/bin/gemini-wrapper"
+
+# 3. Use gemini as normal - token data is now tracked!
+gemini "Your prompt here"
+```
+
+The wrapper creates `~/.gemini/a2zusage-telemetry.jsonl` with exact token counts for each request.
 
 ## Why This Tool?
 

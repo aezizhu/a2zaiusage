@@ -246,18 +246,14 @@ impl Provider for WindsurfProvider {
             .unwrap_or_else(|| "Windsurf".to_string());
 
         // If we didn't parse any real token data but we do see protobuf logs,
-        // count the number of .pb files as sessions (honest proxy for usage)
+        // report as Unsupported - token data is encrypted and cannot be extracted.
+        // The CascadeAnalytics API requires an enterprise service_key.
         if stats.total.input_tokens == 0 && stats.total.output_tokens == 0 && stats.total.request_count == 0 && has_pb_only {
-            // Count .pb files as sessions
-            let session_count = Self::count_pb_files(cascade_dir.as_ref().unwrap());
-            if session_count > 0 {
-                stats.total.request_count = session_count;
-            }
-            return Ok(ProviderResult::active(
+            return Ok(ProviderResult::unsupported(
                 self.name(),
                 self.display_name(),
-                stats,
-                "Session count from .pb files (token data encrypted)",
+                "Token data is encrypted in .pb files. Use Windsurf dashboard for usage stats.",
+                Some(&data_source),
             ));
         }
 

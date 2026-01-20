@@ -186,6 +186,11 @@ pub mod gemini_cli {
         home_dir().map(|h| h.join(".gemini").join("antigravity").join("conversations"))
     }
 
+    /// a2zusage telemetry file (created by gemini-wrapper.sh)
+    pub fn a2zusage_telemetry_file() -> Option<PathBuf> {
+        home_dir().map(|h| h.join(".gemini").join("a2zusage-telemetry.jsonl"))
+    }
+
 }
 
 /// Path configurations for Tabnine
