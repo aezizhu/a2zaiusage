@@ -7,6 +7,7 @@ use crate::utils::time::get_local_time_ranges;
 use anyhow::Result;
 use async_trait::async_trait;
 use chrono::{TimeZone, Utc};
+use reqwest::StatusCode;
 use serde::Deserialize;
 
 #[derive(Debug, Deserialize)]
@@ -24,6 +25,17 @@ struct UsageEntry {
 
 pub struct OpenAICodexProvider;
 
+/// Result of fetching usage data - includes error details for better reporting
+enum FetchResult {
+    Success(UsageStats),
+    Forbidden,
+    Unauthorized,
+    NotFound,
+    RateLimited,
+    NetworkError,
+    ParseError,
+}
+
 impl OpenAICodexProvider {
     pub fn new() -> Self {
         Self
@@ -40,13 +52,13 @@ impl OpenAICodexProvider {
         get_local_time_ranges()
     }
 
-    async fn fetch_usage_data(api_key: &str, ranges: &(TimeRange, TimeRange, TimeRange)) -> Option<UsageStats> {
+    async fn fetch_usage_data(api_key: &str, ranges: &(TimeRange, TimeRange, TimeRange)) -> FetchResult {
         let client = reqwest::Client::new();
 
         let start_date = ranges.2.start.format("%Y-%m-%d").to_string();
         let end_date = Utc::now().format("%Y-%m-%d").to_string();
 
-        let response = client
+        let response = match client
             .get(format!(
                 "https://api.openai.com/v1/organization/usage?start_date={}&end_date={}",
                 start_date, end_date
@@ -55,13 +67,24 @@ impl OpenAICodexProvider {
             .header("Content-Type", "application/json")
             .send()
             .await
-            .ok()?;
+        {
+            Ok(r) => r,
+            Err(_) => return FetchResult::NetworkError,
+        };
 
-        if !response.status().is_success() {
-            return None;
+        match response.status() {
+            StatusCode::OK => {},
+            StatusCode::FORBIDDEN => return FetchResult::Forbidden,
+            StatusCode::UNAUTHORIZED => return FetchResult::Unauthorized,
+            StatusCode::NOT_FOUND => return FetchResult::NotFound,
+            StatusCode::TOO_MANY_REQUESTS => return FetchResult::RateLimited,
+            _ => return FetchResult::NetworkError,
         }
 
-        let data: OpenAIUsageResponse = response.json().await.ok()?;
+        let data: OpenAIUsageResponse = match response.json().await {
+            Ok(d) => d,
+            Err(_) => return FetchResult::ParseError,
+        };
         let mut stats = UsageStats::default();
 
         if let Some(entries) = data.data {
@@ -75,19 +98,19 @@ impl OpenAICodexProvider {
                 stats.this_month.add(&usage);
 
                 if let Some(ts) = entry.aggregation_timestamp {
-                    let entry_date = Utc.timestamp_opt(ts, 0).single()?;
-
-                    if ranges.0.contains(entry_date) {
-                        stats.today.add(&usage);
-                    }
-                    if ranges.1.contains(entry_date) {
-                        stats.this_week.add(&usage);
+                    if let Some(entry_date) = Utc.timestamp_opt(ts, 0).single() {
+                        if ranges.0.contains(entry_date) {
+                            stats.today.add(&usage);
+                        }
+                        if ranges.1.contains(entry_date) {
+                            stats.this_week.add(&usage);
+                        }
                     }
                 }
             }
         }
 
-        Some(stats)
+        FetchResult::Success(stats)
     }
 }
 
@@ -117,22 +140,43 @@ impl Provider for OpenAICodexProvider {
 
         let ranges = Self::get_time_ranges();
 
-        let stats = match Self::fetch_usage_data(&api_key, &ranges).await {
-            Some(s) => s,
-            None => {
-                return Ok(ProviderResult::error(
-                    self.name(),
-                    self.display_name(),
-                    "Failed to fetch usage from OpenAI API (check API key permissions, org access, and network).",
-                ));
-            }
-        };
-
-        Ok(ProviderResult::active(
-            self.name(),
-            self.display_name(),
-            stats,
-            "OpenAI API",
-        ))
+        match Self::fetch_usage_data(&api_key, &ranges).await {
+            FetchResult::Success(stats) => Ok(ProviderResult::active(
+                self.name(),
+                self.display_name(),
+                stats,
+                "OpenAI API",
+            )),
+            FetchResult::Forbidden => Ok(ProviderResult::error(
+                self.name(),
+                self.display_name(),
+                "API key lacks permission to access organization usage data (requires org admin or usage:read scope).",
+            )),
+            FetchResult::Unauthorized => Ok(ProviderResult::error(
+                self.name(),
+                self.display_name(),
+                "Invalid API key. Please check your OPENAI_API_KEY.",
+            )),
+            FetchResult::NotFound => Ok(ProviderResult::error(
+                self.name(),
+                self.display_name(),
+                "Usage API endpoint not found. This may require an organization account.",
+            )),
+            FetchResult::RateLimited => Ok(ProviderResult::error(
+                self.name(),
+                self.display_name(),
+                "Rate limited by OpenAI API. Please try again later.",
+            )),
+            FetchResult::NetworkError => Ok(ProviderResult::error(
+                self.name(),
+                self.display_name(),
+                "Network error connecting to OpenAI API.",
+            )),
+            FetchResult::ParseError => Ok(ProviderResult::error(
+                self.name(),
+                self.display_name(),
+                "Failed to parse OpenAI API response.",
+            )),
+        }
     }
 }

@@ -232,13 +232,15 @@ impl Provider for WindsurfProvider {
             .map(|p| p.to_string_lossy().to_string())
             .unwrap_or_else(|| "Windsurf".to_string());
 
-        // If we didn't parse any real token data but we do see protobuf logs, report as unsupported.
+        // If we didn't parse any real token data but we do see protobuf logs,
+        // still report as Active but with a note that usage data is not extractable.
+        // This is more accurate than "Unsupported" since Windsurf IS installed and working.
         if stats.total.input_tokens == 0 && stats.total.output_tokens == 0 && stats.total.request_count == 0 && has_pb_only {
-            return Ok(ProviderResult::unsupported(
+            return Ok(ProviderResult::active(
                 self.name(),
                 self.display_name(),
-                "Windsurf logs detected, but they are protobuf (.pb) and this tool does not yet extract token counts from them.",
-                Some(&data_source),
+                stats, // empty stats
+                "Installed (usage in encrypted .pb format)",
             ));
         }
 
