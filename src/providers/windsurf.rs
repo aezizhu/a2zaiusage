@@ -78,17 +78,35 @@ impl WindsurfProvider {
         false
     }
 
-    fn count_pb_files(cascade_dir: &Path) -> u64 {
-        let mut count = 0u64;
+    /// Count .pb session files by time period using file modification times
+    fn count_pb_files_by_time(cascade_dir: &Path, ranges: &(TimeRange, TimeRange, TimeRange)) -> UsageStats {
+        let mut stats = UsageStats::default();
+        
         if let Ok(entries) = fs::read_dir(cascade_dir) {
             for entry in entries.flatten() {
                 let path = entry.path();
                 if path.extension().map(|e| e == "pb").unwrap_or(false) {
-                    count += 1;
+                    stats.total.request_count += 1;
+                    
+                    // Try to get modification time and categorize by time period
+                    if let Ok(metadata) = fs::metadata(&path) {
+                        if let Ok(mtime) = metadata.modified() {
+                            let ts: DateTime<Utc> = mtime.into();
+                            if ranges.0.contains(ts) {
+                                stats.today.request_count += 1;
+                            }
+                            if ranges.1.contains(ts) {
+                                stats.this_week.request_count += 1;
+                            }
+                            if ranges.2.contains(ts) {
+                                stats.this_month.request_count += 1;
+                            }
+                        }
+                    }
                 }
             }
         }
-        count
+        stats
     }
 
     fn process_jsonl_file(path: &Path, stats: &mut UsageStats, ranges: &(TimeRange, TimeRange, TimeRange)) {
@@ -246,10 +264,23 @@ impl Provider for WindsurfProvider {
             .unwrap_or_else(|| "Windsurf".to_string());
 
         // If we didn't parse any real token data but we do see protobuf logs,
-        // report as Unsupported - token data is encrypted and cannot be extracted.
-        // The .pb files are encrypted (not just protobuf-encoded), so we cannot read them.
-        // Options: (1) Windsurf dashboard, (2) LSP proxy wrapper (requires setup)
+        // count the number of sessions as the best available metric.
+        // The .pb files are encrypted (not just protobuf-encoded), so we cannot read token counts.
         if stats.total.input_tokens == 0 && stats.total.output_tokens == 0 && stats.total.request_count == 0 && has_pb_only {
+            // Count sessions from encrypted .pb files with time periods
+            if let Some(ref dir) = cascade_dir {
+                let session_stats = Self::count_pb_files_by_time(dir, &ranges);
+                
+                if session_stats.total.request_count > 0 {
+                    return Ok(ProviderResult::active(
+                        self.name(),
+                        self.display_name(),
+                        session_stats,
+                        "Session count only (token data encrypted). See windsurf.ai for details.",
+                    ));
+                }
+            }
+            
             return Ok(ProviderResult::unsupported(
                 self.name(),
                 self.display_name(),

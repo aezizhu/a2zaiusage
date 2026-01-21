@@ -28,7 +28,7 @@
 ├────────────────┼──────────┼───────────────┼─────────────┼─────────────┼───────────────┤
 │ Claude Code    │ ✓ Active │ 321K tokens   │ 1.4M tokens │ 6.1M tokens │ 24.2M tokens  │
 │ Cursor         │ ✓ Active │ -             │ -           │ -           │ 32.5K tokens  │
-│ Windsurf       │ ~ Unsup  │ -             │ -           │ -           │ -             │
+│ Windsurf       │ ✓ Active │ 1 req         │ 1 req       │ 1 req       │ 21 reqs       │
 │ Warp AI        │ ✓ Active │ -             │ -           │ 8.2M tokens │ 167.1M tokens │
 │ Gemini CLI     │ ✓ Active │ -             │ 72K tokens  │ 101K tokens │ 48.1M tokens  │
 │ GitHub Copilot │ ○ N/A    │ -             │ -           │ -           │ -             │
@@ -74,7 +74,7 @@ a2zusage supports **14+ AI coding tools** out of the box:
 | **Claude Code** | Local JSONL (`~/.claude/projects/`) | ✅ Exact token counts (input/output + cache tokens when present) |
 | **Cursor** | SQLite database | ✅ Exact token counts (when present in DB) |
 | **GitHub Copilot** | GitHub API + Local logs | ⚠️ Usage count / requests only (GitHub does not expose reliable token totals here) |
-|| **Windsurf** | Cascade logs (`~/.codeium/`) | ❌ Encrypted: Data stored in encrypted `.pb` files. Use windsurf.ai dashboard or Settings > Usage |
+|| **Windsurf** | Cascade sessions (`~/.codeium/`) | ℹ️ Session count only (token data encrypted). Visit windsurf.ai for detailed usage. |
 | **Warp AI** | SQLite database | ✅ Total tokens (Warp does not expose a reliable input/output split) |
 | **Cline / Roo Code** | VS Code extension storage | ✅ Exact token counts (when stored by the extension) |
 | **OpenCode** | Local JSON files | ✅ Exact token counts (when present in session/message usage fields) |
