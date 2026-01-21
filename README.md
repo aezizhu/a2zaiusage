@@ -28,8 +28,9 @@
 ├────────────────┼──────────┼───────────────┼─────────────┼─────────────┼───────────────┤
 │ Claude Code    │ ✓ Active │ 321K tokens   │ 1.4M tokens │ 6.1M tokens │ 24.2M tokens  │
 │ Cursor         │ ✓ Active │ -             │ -           │ -           │ 32.5K tokens  │
-│ Windsurf       │ ✓ Active │ -             │ -           │ -           │ 7.1M tokens   │
+│ Windsurf       │ ~ Unsup  │ -             │ -           │ -           │ -             │
 │ Warp AI        │ ✓ Active │ -             │ -           │ 8.2M tokens │ 167.1M tokens │
+│ Gemini CLI     │ ✓ Active │ -             │ 72K tokens  │ 101K tokens │ 48.1M tokens  │
 │ GitHub Copilot │ ○ N/A    │ -             │ -           │ -           │ -             │
 │ ...            │ ...      │ ...           │ ...         │ ...         │ ...           │
 ╰────────────────┴──────────┴───────────────┴─────────────┴─────────────┴───────────────╯
@@ -73,12 +74,12 @@ a2zusage supports **14+ AI coding tools** out of the box:
 | **Claude Code** | Local JSONL (`~/.claude/projects/`) | ✅ Exact token counts (input/output + cache tokens when present) |
 | **Cursor** | SQLite database | ✅ Exact token counts (when present in DB) |
 | **GitHub Copilot** | GitHub API + Local logs | ⚠️ Usage count / requests only (GitHub does not expose reliable token totals here) |
-| **Windsurf** | Cascade logs (`~/.codeium/`) | ⚠️ Partial: JSON/JSONL token fields supported; protobuf `.pb` logs are detected but not yet parsed |
+|| **Windsurf** | Cascade logs (`~/.codeium/`) | ❌ Encrypted: Data stored in encrypted `.pb` files. Use windsurf.ai dashboard or Settings > Usage |
 | **Warp AI** | SQLite database | ✅ Total tokens (Warp does not expose a reliable input/output split) |
 | **Cline / Roo Code** | VS Code extension storage | ✅ Exact token counts (when stored by the extension) |
 | **OpenCode** | Local JSON files | ✅ Exact token counts (when present in session/message usage fields) |
 | **OpenAI Codex** | OpenAI Usage API | ✅ Exact token counts (requires API key + org access) |
-|| **Gemini CLI** | Local telemetry (`~/.gemini/`) | ✅ Exact token counts with wrapper (see [Gemini CLI Setup](#gemini-cli-setup)) |
+|| **Gemini CLI** | Native sessions (`~/.gemini/tmp/`) | ✅ Exact token counts from native session files (no setup required) |
 | **Amazon Q Developer** | Local logs | ⚠️ Best-effort: logs may not contain token totals |
 | **Tabnine** | Local logs | ⚠️ Partial: uses explicit token fields when present; no invented prompt/context tokens |
 | **Gemini Code Assist** | Google Cloud | ⚠️ Not implemented in this repo yet |
@@ -140,26 +141,6 @@ a2zusage -v          # Verbose mode with data sources
   }
 ]
 ```
-
-## Tool-Specific Setup
-
-### Gemini CLI Setup
-
-Gemini CLI stores conversation data in encrypted protobuf files. To get accurate token tracking, use our wrapper script that captures the `usageMetadata` from the `--output-format stream-json` output:
-
-```bash
-# 1. Copy the wrapper script
-curl -o ~/.local/bin/gemini-wrapper https://raw.githubusercontent.com/aezizhu/a2zaiusage/main/scripts/gemini-wrapper.sh
-chmod +x ~/.local/bin/gemini-wrapper
-
-# 2. Create an alias (add to your .bashrc or .zshrc)
-alias gemini="~/.local/bin/gemini-wrapper"
-
-# 3. Use gemini as normal - token data is now tracked!
-gemini "Your prompt here"
-```
-
-The wrapper creates `~/.gemini/a2zusage-telemetry.jsonl` with exact token counts for each request.
 
 ## Why This Tool?
 

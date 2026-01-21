@@ -25,13 +25,49 @@ struct GeminiLogEntry {
 #[derive(Debug, Deserialize)]
 struct A2zTelemetryEntry {
     timestamp: Option<String>,
+    #[allow(dead_code)]
     model: Option<String>,
     input_tokens: Option<u64>,
     output_tokens: Option<u64>,
+    #[allow(dead_code)]
     total_tokens: Option<u64>,
     cached_tokens: Option<u64>,
+    #[allow(dead_code)]
     duration_ms: Option<u64>,
+    #[allow(dead_code)]
     tool_calls: Option<u64>,
+}
+
+/// Token info from native Gemini CLI session files
+#[derive(Debug, Deserialize)]
+struct GeminiSessionTokens {
+    input: Option<u64>,
+    output: Option<u64>,
+    cached: Option<u64>,
+    #[allow(dead_code)]
+    thoughts: Option<u64>,
+    #[allow(dead_code)]
+    tool: Option<u64>,
+    #[allow(dead_code)]
+    total: Option<u64>,
+}
+
+/// Message in native Gemini CLI session file
+#[derive(Debug, Deserialize)]
+struct GeminiSessionMessage {
+    timestamp: Option<String>,
+    #[serde(rename = "type")]
+    msg_type: Option<String>,
+    tokens: Option<GeminiSessionTokens>,
+}
+
+/// Native Gemini CLI session file format (~/.gemini/tmp/<hash>/chats/session-*.json)
+#[derive(Debug, Deserialize)]
+struct GeminiSession {
+    #[allow(dead_code)]
+    #[serde(rename = "sessionId")]
+    session_id: Option<String>,
+    messages: Option<Vec<GeminiSessionMessage>>,
 }
 
 pub struct GeminiCLIProvider;
@@ -133,6 +169,7 @@ impl GeminiCLIProvider {
         false
     }
 
+    #[allow(dead_code)]
     fn count_pb_files(dir: &Path) -> u64 {
         let mut count = 0u64;
         if let Ok(entries) = fs::read_dir(dir) {
@@ -144,6 +181,79 @@ impl GeminiCLIProvider {
             }
         }
         count
+    }
+
+    /// Process native Gemini CLI session files from ~/.gemini/tmp/<hash>/chats/
+    fn process_native_sessions(tmp_dir: &Path, stats: &mut UsageStats, ranges: &(TimeRange, TimeRange, TimeRange)) {
+        // Iterate through all project hash directories
+        if let Ok(entries) = fs::read_dir(tmp_dir) {
+            for entry in entries.flatten() {
+                let path = entry.path();
+                if path.is_dir() {
+                    // Check for chats subdirectory
+                    let chats_dir = path.join("chats");
+                    if chats_dir.exists() {
+                        Self::process_chats_dir(&chats_dir, stats, ranges);
+                    }
+                }
+            }
+        }
+    }
+
+    /// Process all session JSON files in a chats directory
+    fn process_chats_dir(chats_dir: &Path, stats: &mut UsageStats, ranges: &(TimeRange, TimeRange, TimeRange)) {
+        if let Ok(entries) = fs::read_dir(chats_dir) {
+            for entry in entries.flatten() {
+                let path = entry.path();
+                if path.extension().map(|e| e == "json").unwrap_or(false) {
+                    Self::process_session_file(&path, stats, ranges);
+                }
+            }
+        }
+    }
+
+    /// Process a single Gemini CLI session JSON file
+    fn process_session_file(path: &Path, stats: &mut UsageStats, ranges: &(TimeRange, TimeRange, TimeRange)) {
+        if let Ok(content) = fs::read_to_string(path) {
+            if let Ok(session) = serde_json::from_str::<GeminiSession>(&content) {
+                if let Some(messages) = session.messages {
+                    for msg in messages {
+                        // Only process gemini (model) responses which have token counts
+                        if msg.msg_type.as_deref() != Some("gemini") {
+                            continue;
+                        }
+                        
+                        if let Some(tokens) = msg.tokens {
+                            let mut usage = UsageData::new();
+                            usage.input_tokens = tokens.input.unwrap_or(0);
+                            usage.output_tokens = tokens.output.unwrap_or(0);
+                            usage.cache_read_tokens = tokens.cached.unwrap_or(0);
+                            
+                            if usage.input_tokens > 0 || usage.output_tokens > 0 {
+                                usage.request_count = 1;
+                                stats.total.add(&usage);
+                                
+                                // Parse timestamp
+                                if let Some(ts_str) = &msg.timestamp {
+                                    if let Ok(ts) = DateTime::parse_from_rfc3339(ts_str) {
+                                        let ts = ts.with_timezone(&Utc);
+                                        if ranges.0.contains(ts) {
+                                            stats.today.add(&usage);
+                                        }
+                                        if ranges.1.contains(ts) {
+                                            stats.this_week.add(&usage);
+                                        }
+                                        if ranges.2.contains(ts) {
+                                            stats.this_month.add(&usage);
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        }
     }
 
     fn process_json_file(path: &Path, stats: &mut UsageStats, ranges: &(TimeRange, TimeRange, TimeRange)) {
@@ -260,7 +370,15 @@ impl Provider for GeminiCLIProvider {
             }
         }
 
-        // If we got data from a2zusage telemetry, return it
+        // PRIORITY 2: Process native Gemini CLI session files
+        let tmp_dir = gemini_cli::tmp_dir();
+        if let Some(ref dir) = tmp_dir {
+            if dir.exists() {
+                Self::process_native_sessions(dir, &mut stats, &ranges);
+            }
+        }
+
+        // If we got data from a2zusage telemetry or native sessions, return it
         if stats.total.input_tokens > 0 || stats.total.output_tokens > 0 {
             // Calculate costs
             stats.today.estimated_cost = calculate_cost(stats.today.input_tokens, stats.today.output_tokens, Some("gemini-2.0-flash"));
@@ -268,11 +386,17 @@ impl Provider for GeminiCLIProvider {
             stats.this_month.estimated_cost = calculate_cost(stats.this_month.input_tokens, stats.this_month.output_tokens, Some("gemini-2.0-flash"));
             stats.total.estimated_cost = calculate_cost(stats.total.input_tokens, stats.total.output_tokens, Some("gemini-2.0-flash"));
             
+            let source = if has_a2z_telemetry {
+                "a2zusage telemetry + native sessions"
+            } else {
+                "~/.gemini/tmp/*/chats/"
+            };
+            
             return Ok(ProviderResult::active(
                 self.name(),
                 self.display_name(),
                 stats,
-                "a2zusage telemetry (via gemini-wrapper)",
+                source,
             ));
         }
 

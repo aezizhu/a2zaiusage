@@ -247,12 +247,13 @@ impl Provider for WindsurfProvider {
 
         // If we didn't parse any real token data but we do see protobuf logs,
         // report as Unsupported - token data is encrypted and cannot be extracted.
-        // The CascadeAnalytics API requires an enterprise service_key.
+        // The .pb files are encrypted (not just protobuf-encoded), so we cannot read them.
+        // Options: (1) Windsurf dashboard, (2) LSP proxy wrapper (requires setup)
         if stats.total.input_tokens == 0 && stats.total.output_tokens == 0 && stats.total.request_count == 0 && has_pb_only {
             return Ok(ProviderResult::unsupported(
                 self.name(),
                 self.display_name(),
-                "Token data is encrypted in .pb files. Use Windsurf dashboard for usage stats.",
+                "Data is encrypted. Check windsurf.ai dashboard or Settings > Usage.",
                 Some(&data_source),
             ));
         }

@@ -191,6 +191,10 @@ pub mod gemini_cli {
         home_dir().map(|h| h.join(".gemini").join("a2zusage-telemetry.jsonl"))
     }
 
+    /// Temp directory containing session history (~/.gemini/tmp/)
+    pub fn tmp_dir() -> Option<PathBuf> {
+        home_dir().map(|h| h.join(".gemini").join("tmp"))
+    }
 }
 
 /// Path configurations for Tabnine
